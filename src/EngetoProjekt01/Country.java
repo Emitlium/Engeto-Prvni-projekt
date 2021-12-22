@@ -1,6 +1,7 @@
 package EngetoProjekt01;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 public class Country {
     // == ATTRIBUTES ==
@@ -24,7 +25,8 @@ public class Country {
     }
 
     public String getNameCodeFullVat(){
-        return getCountryName()+" ("+getCountryCode()+"): "+getFullVat()+" %";
+        DecimalFormat df = new DecimalFormat("#0.##");
+        return getCountryName()+" ("+getCountryCode()+"): "+df.format(getFullVat())+" %";
     }
 
 

@@ -10,10 +10,14 @@ import java.util.Scanner;
 public class Data {
     // == ATTRIBUTES ==
     private final List<Country> listOfCountriesVAT = new ArrayList<>();
+    private final List<Country> aboveVATnoPartialVat = new ArrayList<>();
 
     // == METHODS
     public List<Country> getListOfCountriesVAT() {
         return listOfCountriesVAT;
+    }
+    public List<Country> getAboveVATnoPartialVat() {
+        return aboveVATnoPartialVat;
     }
 
     // == METHOD: IMPORT ==
@@ -38,54 +42,57 @@ public class Data {
         return listOfCountriesVAT;
     }
 
-    // Vše v formátu "Název země (zkratka): základní sazba %"
-    public void printNameCodeFullVat(){
-        for (Country country : getListOfCountriesVAT()){
+    // Metody k manipulování listů
+    public void sortCountriesBasedOnVAT(BigDecimal bigDecimal){
+        for (Country country : getListOfCountriesVAT()) {
+            if (country.getFullVat().compareTo(bigDecimal) > 0 && !country.isHasPartialVat()){
+                aboveVATnoPartialVat.add(country);
+            }
+        }
+    }
+
+    public void basePrint (boolean onlyAboveVatAndNoPartialVat, boolean sort, boolean code){
+        if (onlyAboveVatAndNoPartialVat && sort) {
+            List<String> temp = new ArrayList<>();
+            getAboveVATnoPartialVat().sort(Comparator.comparing(Country::getFullVat).reversed());
+            for (Country country : getAboveVATnoPartialVat()) {
+                System.out.println(country.getNameCodeFullVat());
+                temp.add(country.getCountryCode());
+            }
+            if (code){
+                System.out.println("====================");
+                System.out.println("Sazba VAT "+Filter.getVatFilter()+" % nebo nižší nebo používají speciální sazbu: ");
+
+                temp.sort(Comparator.comparing(String::toString));
+                for (String string : temp) {
+                    System.out.print(string+", ");
+                }
+            }
+        }
+
+        else if (onlyAboveVatAndNoPartialVat) {
+            for (Country country : getAboveVATnoPartialVat())
+                System.out.println(country.getNameCodeFullVat());
+
+        }
+
+        else for (Country country : getListOfCountriesVAT()){
             System.out.println(country.getNameCodeFullVat());
         }
     }
 
-    // Nad 20% full vat + bez partial vat, formát "Název země (zkratka): základní sazba %"
-    public void printNCFullVat(){
-        for (Country country : getListOfCountriesVAT()){
-            if (country.getFullVat().doubleValue() > 20 && !country.isHasPartialVat()) {
-                System.out.println(country.getNameCodeFullVat());
-            }
-        }
-    }
-
-    // Nad 20% full vat + bez partial vat, formát "Název země (zkratka): základní sazba %" + sort
-    public void printNCFullVatSorted(){
-        getListOfCountriesVAT().sort(Comparator.comparing(Country::getFullVat).reversed());
-        printNCFullVat();
-    }
-
-    public void printNCFullVatSortedAndCC(){
-        List<String> temp = new ArrayList<>();
-        for (Country country : getListOfCountriesVAT()){
-            if (country.getFullVat().doubleValue() > 20 && !country.isHasPartialVat()) {
-                System.out.println(country.getNameCodeFullVat());
-            } temp.add(country.getCountryCode());
-        }
-        System.out.println("====================");
-        System.out.println("Sazba VAT 20 % nebo nižší nebo používají speciální sazbu: ");
-        temp.sort(Comparator.comparing(String::toString));
-        for (String string : temp) {
-            System.out.print(string+", ");
-        }
-    }
-
-    public void exportPrintNCFullVatSortedAndCC(String file){
+    // == METHOD: EXPORT ==
+    public void exportData(String file){
         List<String> temp = new ArrayList<>();
         try {
             PrintWriter writer = new PrintWriter(new FileWriter(file));
-            for (Country country : getListOfCountriesVAT()){
-                if (country.getFullVat().doubleValue() > 20 && !country.isHasPartialVat()) {
+            for (Country country : getAboveVATnoPartialVat()){
+                if (country.getFullVat().doubleValue() > Filter.getVatFilter().doubleValue() && !country.isHasPartialVat()) {
                     writer.println(country.getNameCodeFullVat());
                 } temp.add(country.getCountryCode());
             }
             writer.println("====================");
-            writer.println("Sazba VAT 20 % nebo nižší nebo používají speciální sazbu: ");
+            writer.println("Sazba VAT "+ Filter.getVatFilter() +" % nebo nižší nebo používají speciální sazbu: ");
             temp.sort(Comparator.comparing(String::toString));
             for (String string : temp) {
                 writer.print(string+", ");
@@ -96,6 +103,4 @@ public class Data {
             e.printStackTrace();
         }
     }
-
-
 }
